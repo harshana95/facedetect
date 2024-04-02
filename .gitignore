@@ -1,0 +1,16 @@
+**.idea
+*.npy
+*.mat
+*.png
+*.jpg
+*.tiff
+*.jpeg
+*.json
+*.pt
+**results*
+**experiments*
+*.pkl
+*.pth
+**tfevents**
+*.out
+/dataset/real_psfs/
