@@ -76,7 +76,7 @@ if __name__ == "__main__":
 
     transform = transforms.Compose([resize(1024, 1024, keys=('x',)), padding(1024, 1024, keys=('x',), mode='constant')])
     ds = ImageDataset(files, files, n_classes=len(category), onehot=False, transform=transform)
-    ds = DataLoader(ds, batch_size=4, num_workers=4, shuffle=False)
+    ds = DataLoader(ds, batch_size=args.batch_size, num_workers=4, shuffle=False)
 
     face_count_hist = [0] * 40
     pbar = tqdm(ds)
