@@ -1,6 +1,4 @@
 import argparse
-import matplotlib
-matplotlib.use('Agg')
 
 from trainers.trainer import Trainer
 from utils.default_args import add_default_args, parse_args

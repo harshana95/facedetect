@@ -13,17 +13,28 @@ class resize:
         self.w = w
         self.keys = keys
         self.kar = keep_aspect_ratio
+        self.trans = transforms.Resize(size=(h, w),antialias=True)
 
     def _resize(self, x):
         w, h = self.w, self.h
+
         if self.kar:
+            if type(x) == np.ndarray:
+                xh, xw = x.shape[0], x.shape[1]
+            else:
+                xh, xw = x.shape[1], x.shape[2]
             if w>h:
                 w = self.w
-                h = int(x.shape[0]*w/x.shape[1])
+                h = int(xh*w/xw)
             else:
                 h = self.h
-                w = int(x.shape[1]*h/x.shape[0])
-        resized = cv2.resize(x, (w, h))
+                w = int(xw*h/xh)
+            self.trans = transforms.Resize(size=(h, w),antialias=True)
+
+        if type(x) == np.ndarray:
+            resized = cv2.resize(x, (w, h))
+        else:
+            resized = self.trans(x)
         return resized
 
     def __call__(self, sample):

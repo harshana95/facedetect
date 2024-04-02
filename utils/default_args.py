@@ -10,8 +10,10 @@ def add_default_args(parser, name, batch_size=1, phase='train', datasetname='tra
         data_percent = 100
         # dataset_path = 'C:\\Users\\harsh\\Datasets\\flickr30k_images_PCA_file_z10000_cartesian_x1'
     elif os.name == 'posix' and os.path.isdir('/depot'):
-        dataset_path = f"/scratch/gilbreth/wweligam/FaceDetect/{datasetname}"
+        dataset_path = f"/scratch/gilbreth/wweligam/FaceData/{datasetname}"
         data_percent = 100
+        import matplotlib
+        matplotlib.use('Agg')
     else:
         from PyQt5.QtCore import QLibraryInfo
         os.environ["QT_QPA_PLATFORM_PLUGIN_PATH"] = QLibraryInfo.location(QLibraryInfo.PluginsPath)

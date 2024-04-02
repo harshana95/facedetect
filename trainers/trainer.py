@@ -19,7 +19,7 @@ from torchvision.transforms import transforms
 from dataset.BasicDataset import ImageDataset
 from modelzoo.AutoEncoder import *
 from modelzoo.FaceModel import *
-from utils.dataset_utils import resize, fix_image_shape, augment, to_tensor
+from utils.dataset_utils import resize, fix_image_shape, augment, to_tensor, crop2d
 from utils.loss_utils import eval_metrics_folder
 from utils.utils import generate_folder, dict_add, hstack_images
 
@@ -168,7 +168,8 @@ class Trainer:
         y['Label'] = [labels.Category[labels.Category == i].index.tolist()[0] for i in y.Category]
 
         if not refresh:
-            x_train, x_test, y_train, y_test = train_test_split(y['Path'], y['Label'], test_size=self.args.test_ratio, shuffle=False)
+            x_train, x_test, y_train, y_test = train_test_split(y['Path'], y['Label'], test_size=self.args.test_ratio,
+                                                                shuffle=False)
             x_test = x_test
             y_test = y_test
             self.x_train = x_train
@@ -184,10 +185,16 @@ class Trainer:
         n = np.random.rand(len(y_train)) < self.args.label_noise
         y_train[n] = np.random.randint(0, 100, sum(n))
 
-        transform = transforms.Compose([resize(self.args.image_size_h, self.args.image_size_w, keys=('x',)),
-                                        fix_image_shape(keys=('x',)),
-                                        to_tensor(),
-                                        augment(keys=('x',), horizontal_flip=True, resize_crop=False, rotate=True)])
+        h, w = self.args.image_size_h, self.args.image_size_w
+        one2r2 = 1/(2*(2**0.5))
+        transform = transforms.Compose([
+            fix_image_shape(keys=('x',)),
+            to_tensor(),
+            resize(h, w, keys=('x',)),
+            augment(keys=('x',), horizontal_flip=True, resize_crop=False, rotate=True),
+            crop2d(crop_indices=[int(h*(0.5-one2r2)), int(h*(0.5+one2r2)), int(w*(0.5-one2r2)), int(w*(0.5+one2r2))], best=False, keys=('x',)),
+            resize(h, w, keys=('x',)),
+        ])
         dataset_train = ImageDataset(x_train, y_train, self.n_classes, transform=transform)
         dataset_val = ImageDataset(x_val, y_val, self.n_classes, transform=transform)
         dataset_test = ImageDataset(self.x_test, self.y_test, self.n_classes, transform=transform)
@@ -254,10 +261,12 @@ class Trainer:
             self.model = FaceModel((self.args.image_size_h, self.args.image_size_w), n_classes=self.n_classes, ae=ae)
         elif self.args.model == 'model1_small':
             ae = AutoEncoder(n_channel_in=3, n_channel_out=3)
-            self.model = FaceModelSmall((self.args.image_size_h, self.args.image_size_w), n_classes=self.n_classes, ae=ae)
+            self.model = FaceModelSmall((self.args.image_size_h, self.args.image_size_w), n_classes=self.n_classes,
+                                        ae=ae)
         elif self.args.model == 'model2_small':
             ae = AutoEncoder2(n_channel_in=3, n_channel_out=3)
-            self.model = FaceModelSmall((self.args.image_size_h, self.args.image_size_w), n_classes=self.n_classes, ae=ae)
+            self.model = FaceModelSmall((self.args.image_size_h, self.args.image_size_w), n_classes=self.n_classes,
+                                        ae=ae)
         elif self.args.model == 'simple':
             self.model = Simple()
         elif self.args.model == 'simple_medium':
@@ -330,14 +339,15 @@ class Trainer:
             self.args.current_epoch = epoch  # this will change self.logger.args as well
             self.logger.create_loss_meters({"model": criterion.loss_str})
 
-            if epoch%self.args.validate_every == 0:
+            if epoch % self.args.validate_every == 0:
                 with torch.no_grad():
                     if self.dataset_test is not None:
                         self.test_validate(phase='test', dataset=self.dataset_test, save_images=True, save_model=True)
-                    self.test_validate(phase='val', dataset=self.dataset_val, save_images_first_only=False, save_model=False)
+                    self.test_validate(phase='val', dataset=self.dataset_val, save_images_first_only=False,
+                                       save_model=False)
                     _tmp_losses_to_plot[0].append(self.logger.loss_meters['model']['all'].avg)
                     _tmp_losses_to_plot[1].append(epoch)
-            if epoch%self.args.refresh_dataset_every == 0:
+            if epoch % self.args.refresh_dataset_every == 0:
                 print(f"Refreshing datasets")
                 self.initialize_dataset(onthefly=self.onthefly, dataset_path=self.dataset_paths[0], refresh=True)
                 self.dataset_train = self.accelerator.prepare(self.dataset_train)
@@ -363,7 +373,7 @@ class Trainer:
                 mean_acc_n += len(_x)
 
                 # update current status
-                tmp = f"Epoch: {epoch}/{total_epochs} loss:{loss['all'].item():.2f} acc:{mean_acc/mean_acc_n:.2f} lr:{self.sched.get_last_lr()}"
+                tmp = f"Epoch: {epoch}/{total_epochs} loss:{loss['all'].item():.2f} acc:{mean_acc / mean_acc_n:.2f} lr:{self.sched.get_last_lr()}"
                 pbar.set_postfix_str(tmp)
             pbar.close()
             self.experiment.log_metric(f"Accuracy (train)", mean_acc / mean_acc_n, epoch=self.args.current_epoch)
@@ -420,7 +430,7 @@ class Trainer:
                 _y = torch.argmax(label, dim=1, keepdim=True)
                 acc = ((_x == _y).float().mean())
                 loss['Accuracy'] = acc
-                mean_acc += acc*len(_x)
+                mean_acc += acc * len(_x)
                 mean_acc_n += len(_x)
 
                 out_np = einops.rearrange(out.detach().cpu().numpy(), "n c h w -> n h w c")
@@ -454,7 +464,7 @@ class Trainer:
 
                 # update current status
                 avg_loss = self.logger.loss_meters['model']['all'].avg
-                tmp = f"Phase: {phase} loss:{avg_loss:.2f} acc:{mean_acc/mean_acc_n:.2f}"
+                tmp = f"Phase: {phase} loss:{avg_loss:.2f} acc:{mean_acc / mean_acc_n:.2f}"
                 pbar.set_postfix_str(tmp)
             pbar.close()
             self.experiment.log_metric(f"Accuracy ({phase})", mean_acc / mean_acc_n, epoch=self.args.current_epoch)

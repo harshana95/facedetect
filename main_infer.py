@@ -60,20 +60,22 @@ if __name__ == '__main__':
                     best_score = score
                     best_label = arg_label
 
-                plt.subplot(131), plt.imshow(x[0].numpy().transpose([1, 2, 0])), plt.title(_id)
-                plt.subplot(132), plt.imshow(x_hat[0].numpy().transpose([1, 2, 0])), plt.title(f"{labels[labels.index == arg_label]['Category'].item()}")
-                plt.subplot(133), plt.plot(label)
-                plt.show()
+                #plt.subplot(131), plt.imshow(x[0].numpy().transpose([1, 2, 0])), plt.title(_id)
+                #plt.subplot(132), plt.imshow(x_hat[0].numpy().transpose([1, 2, 0])), plt.title(f"{labels[labels.index == arg_label]['Category'].item()}")
+                #plt.subplot(133), plt.plot(label)
+                #plt.show()
             if best_label == -1:
                 print("No faces", _id)
                 best_label = 0
             best_label_name = labels[labels.index == best_label]["Category"].item()
             ans.loc[len(ans)] = [_id, best_label_name]
-        if _id%100 == 0:
-            ans["Id"] = ans["Id"].astype(int)
-            ans = ans.sort_values(by=['Id'])
-            ans.to_csv(args.load_model_path+"Solution.csv", index=False)
+            if _id%100 == 0:
+                ans["Id"] = ans["Id"].astype(int)
+                ans = ans.sort_values(by=['Id'])
+                ans.to_csv(args.load_model_path+"Solution.csv", index=False)
 
-
+    ans["Id"] = ans["Id"].astype(int)
+    ans = ans.sort_values(by=['Id'])
+    ans.to_csv(args.load_model_path+"Solution.csv", index=False)
 
 

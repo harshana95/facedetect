@@ -51,7 +51,7 @@ def save_face(new_labels, image, label, fname, j, save_loc):
 
 
 if __name__ == "__main__":
-    datasetname = 'test'
+    datasetname = 'train_small'
     parser = argparse.ArgumentParser()
     parser = add_default_args(parser, 'face_detect', 64, datasetname=datasetname)
     args = parse_args(parser)
