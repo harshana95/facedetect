@@ -67,20 +67,14 @@ if __name__ == "__main__":
     generate_folder(save_loc)
 
     # If required, create a face detection pipeline using MTCNN:
-    mtcnn = MTCNN(image_size=256, margin=64, keep_all=True, min_face_size=40)
-
-    # Create an inception resnet (in eval mode):
-    resnet = InceptionResnetV1(pretrained='vggface2').eval()
-    for param in resnet.parameters():
-        param.requires_grad = False
-    resnet.logits = nn.Linear(512, 100)
+    mtcnn = MTCNN(image_size=256, margin=64, keep_all=True, min_face_size=80)
 
     files = list(sorted(glob.glob(os.path.join(loc, "*"))))
     labels = pd.read_csv(os.path.join(os.path.dirname(loc), os.path.basename(loc) + ".csv"))
     category = pd.read_csv(os.path.join(os.path.dirname(loc), "category.csv"))
     new_labels = pd.DataFrame(columns=labels.columns[1:])
 
-    transform = transforms.Compose([resize(512, 512, keys=('x',)), padding(512, 512, keys=('x',), mode='constant')])
+    transform = transforms.Compose([resize(1024, 1024, keys=('x',)), padding(1024, 1024, keys=('x',), mode='constant')])
     ds = ImageDataset(files, files, n_classes=len(category), onehot=False, transform=transform)
     ds = DataLoader(ds, batch_size=4, num_workers=4, shuffle=False)
 
