@@ -19,7 +19,7 @@ from torchvision.transforms import transforms
 from dataset.BasicDataset import ImageDataset
 from modelzoo.AutoEncoder import *
 from modelzoo.FaceModel import *
-from utils.dataset_utils import resize, fix_image_shape, augment, to_tensor, crop2d
+from utils.dataset_utils import *
 from utils.loss_utils import eval_metrics_folder
 from utils.utils import generate_folder, dict_add, hstack_images
 
@@ -192,8 +192,7 @@ class Trainer:
             to_tensor(),
             resize(h, w, keys=('x',)),
             augment(keys=('x',), horizontal_flip=True, resize_crop=False, rotate=True),
-            crop2d(crop_indices=[int(h*(0.5-one2r2)), int(h*(0.5+one2r2)), int(w*(0.5-one2r2)), int(w*(0.5+one2r2))], random=True, keys=('x',)),
-            resize(h, w, keys=('x',)),
+            cropresize(h, w, crop_indices=[int(h*(0.5-one2r2)), int(h*(0.5+one2r2)), int(w*(0.5-one2r2)), int(w*(0.5+one2r2))], random=True, keys=('x',)),
         ])
         dataset_train = ImageDataset(x_train, y_train, self.n_classes, transform=transform)
         dataset_val = ImageDataset(x_val, y_val, self.n_classes, transform=transform)

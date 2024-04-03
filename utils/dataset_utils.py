@@ -85,11 +85,12 @@ class divisible_by:
         return sample
 
 
-class crop2d:
-    def __init__(self, crop_indices=None, random=True, keys=()):
+class cropresize:
+    def __init__(self, h, w, crop_indices=None, random=True, keys=()):
         self.active_keys = keys
         self.ci = crop_indices
         self.random = random
+        self.trans = transforms.Resize((h, w), antialias=True)
 
     def crop(self, image):
         a, b, c, d = self.ci
@@ -98,7 +99,7 @@ class crop2d:
             b = np.random.randint(b, image.shape[-2])
             c = np.random.randint(0, c)
             d = np.random.randint(d, image.shape[-1])
-        image = image[..., a:b, c:d]
+        image = self.trans(image[..., a:b, c:d])
         return image
 
     def __call__(self, sample):
