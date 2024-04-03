@@ -276,6 +276,8 @@ class Trainer:
             self.model = SimpleSmall()
         elif self.args.model == 'inc':
             self.model = InceptionV1()
+        elif self.args.model == 'inc2':
+            self.model = InceptionV2()
         else:
             raise Exception()
         if len(self.args.load_model_path) > 0:
