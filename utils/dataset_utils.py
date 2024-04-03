@@ -86,22 +86,19 @@ class divisible_by:
 
 
 class crop2d:
-    def __init__(self, crop_indices=None, best=True, keys=()):
-        self.best = best
+    def __init__(self, crop_indices=None, random=True, keys=()):
         self.active_keys = keys
         self.ci = crop_indices
-        if best and crop_indices is not None:
-            print("Crop indices will be ignored and best square will be cropped")
+        self.random = random
 
     def crop(self, image):
-        # sample shape (..., h, w)
-        if self.best:
-            h, w = image.shape[-2], image.shape[-1]
-            ch, cw = h // 2, w // 2
-            r = min(ch, cw)
-            image = image[..., ch - r:ch + r, cw - r:cw + r]
-        else:
-            image = image[..., self.ci[0]:self.ci[1], self.ci[2]:self.ci[3]]
+        a, b, c, d = self.ci
+        if self.random:
+            a = np.random.randint(0, a)
+            b = np.random.randint(b, image.shape[-2])
+            c = np.random.randint(0, c)
+            d = np.random.randint(d, image.shape[-1])
+        image = image[..., a:b, c:d]
         return image
 
     def __call__(self, sample):
@@ -296,7 +293,7 @@ class augment:
             assert image_shape is not None
             self.ops.append(transforms.RandomResizedCrop(image_shape, antialias=True))
         if rotate:
-            self.ops.append(transforms.RandomRotation(90))
+            self.ops.append(transforms.RandomRotation(60))
 
     def aug(self, image):
         for op in self.ops:

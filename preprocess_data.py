@@ -38,7 +38,7 @@ def try_bad_image(image, mtcnn):
     if crop is None:
         pad = padding(h * 2, w * 2, [])
         _image = pad(_image)
-        _image = torch.tensor(cv2.resize(_image.numpy(), (w, h)))
+        _image = torch.tensor(cv2.resize(_image.cpu().numpy(), (w, h))).cuda()
         crop, probs = extract_faces(_image, mtcnn)
     return crop, probs
 
@@ -53,7 +53,7 @@ def save_face(new_labels, image, label, fname, j, save_loc):
 if __name__ == "__main__":
     datasetname = 'train_small'
     parser = argparse.ArgumentParser()
-    parser = add_default_args(parser, 'face_detect', 64, datasetname=datasetname)
+    parser = add_default_args(parser, 'face_detect', 4, datasetname=datasetname)
     args = parse_args(parser)
 
     skip_multiple_faces = False
@@ -67,7 +67,7 @@ if __name__ == "__main__":
     generate_folder(save_loc)
 
     # If required, create a face detection pipeline using MTCNN:
-    mtcnn = MTCNN(image_size=256, margin=64, keep_all=True, min_face_size=80)
+    mtcnn = MTCNN(image_size=256, margin=64, keep_all=True, min_face_size=80, device='cuda').eval()
 
     files = list(sorted(glob.glob(os.path.join(loc, "*"))))
     labels = pd.read_csv(os.path.join(os.path.dirname(loc), os.path.basename(loc) + ".csv"))
@@ -80,8 +80,9 @@ if __name__ == "__main__":
 
     face_count_hist = [0] * 40
     pbar = tqdm(ds)
+    mtcnn = mtcnn.cuda()
     for sample in pbar:
-        imgs = sample['x']
+        imgs = sample['x'].cuda()
         pbar.set_postfix_str(f"{face_count_hist[:5]}")
         imgs_crop, face_probs = extract_faces(imgs * 255, mtcnn)
         for i in range(len(imgs)):
@@ -101,7 +102,7 @@ if __name__ == "__main__":
             probs = probs[probs > 0.99]
             if len(faces) == 0:
                 faces, probs = try_bad_image(_image, mtcnn)
-            if len(faces) == 0:
+            if faces is None:
                 face_count_hist[0] += 1
                 if save_no_face:
                     new_labels = save_face(new_labels, _image.to(torch.uint8).numpy(), label, filename, 0, save_loc)
@@ -111,14 +112,15 @@ if __name__ == "__main__":
 
             if len(probs) > 1 and skip_multiple_faces:
                 continue
+            faces = faces.cpu()
             for j in range(len(faces)):
-                face = einops.rearrange(faces[j], 'c h w -> h w c')
+                face = einops.rearrange(faces[j], 'h w c -> h w c')
                 face = ((face + 1) / 2 * 255).to(torch.uint8).numpy()
-                img = _image.to(torch.uint8).numpy()
                 prob = probs[j]
 
                 new_labels = save_face(new_labels, face, label, filename, j, save_loc)
 
+                # # img = _image.cpu().to(torch.uint8).numpy()
                 # new_filename = f"{filename.split('.')[0]}_{j:03d}.{filename.split('.')[1]}"
                 # new_labels.loc[len(new_labels)] = [new_filename, label]
                 # plt.imsave(os.path.join(save_loc, new_filename), face)

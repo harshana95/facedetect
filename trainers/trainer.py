@@ -192,7 +192,7 @@ class Trainer:
             to_tensor(),
             resize(h, w, keys=('x',)),
             augment(keys=('x',), horizontal_flip=True, resize_crop=False, rotate=True),
-            crop2d(crop_indices=[int(h*(0.5-one2r2)), int(h*(0.5+one2r2)), int(w*(0.5-one2r2)), int(w*(0.5+one2r2))], best=False, keys=('x',)),
+            crop2d(crop_indices=[int(h*(0.5-one2r2)), int(h*(0.5+one2r2)), int(w*(0.5-one2r2)), int(w*(0.5+one2r2))], random=True, keys=('x',)),
             resize(h, w, keys=('x',)),
         ])
         dataset_train = ImageDataset(x_train, y_train, self.n_classes, transform=transform)
