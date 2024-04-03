@@ -278,6 +278,12 @@ class Trainer:
             self.model = InceptionV1()
         elif self.args.model == 'inc2':
             self.model = InceptionV2()
+        elif self.args.model == 'inc3':
+            self.model = InceptionV3()
+        elif self.args.model == 'inc4':
+            self.model = InceptionV4()
+        elif self.args.model == 'inc5':
+            self.model = InceptionV5()
         else:
             raise Exception()
         if len(self.args.load_model_path) > 0:

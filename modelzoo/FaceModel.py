@@ -36,6 +36,74 @@ class InceptionV2(nn.Module):
     def forward(self, x):
         return x, self.model(x)
 
+class InceptionV3(nn.Module):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Create an inception resnet (in eval mode):
+        resnet = InceptionResnetV1(pretrained='vggface2', classify=True).eval()
+        for param in resnet.parameters():
+            param.requires_grad = False
+
+        for param in resnet.block8.parameters():
+            param.requires_grad = True
+        for param in resnet.last_linear.parameters():
+            param.requires_grad = True
+
+        resnet.logits = nn.Sequential(nn.Linear(512, 200),
+                                      nn.ReLU(),
+                                      nn.Dropout(),
+                                      nn.Linear(200, 100),
+                                      )
+        self.model = resnet
+
+    def forward(self, x):
+        return x, self.model(x)
+
+
+class InceptionV4(nn.Module):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Create an inception resnet (in eval mode):
+        resnet = InceptionResnetV1(pretrained='vggface2', classify=True).eval()
+        for param in resnet.parameters():
+            param.requires_grad = False
+
+        for param in resnet.mixed_6a.parameters():
+            param.requires_grad = True
+        for param in resnet.repeat_2.parameters():
+            param.requires_grad = True
+        for param in resnet.mixed_7a.parameters():
+            param.requires_grad = True
+        for param in resnet.repeat_3.parameters():
+            param.requires_grad = True
+
+        for param in resnet.block8.parameters():
+            param.requires_grad = True
+        for param in resnet.last_linear.parameters():
+            param.requires_grad = True
+
+        resnet.logits = nn.Sequential(nn.Linear(512, 200),
+                                      nn.ReLU(),
+                                      nn.Dropout(),
+                                      nn.Linear(200, 100),
+                                      )
+        self.model = resnet
+
+    def forward(self, x):
+        return x, self.model(x)
+
+
+class InceptionV5(nn.Module):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Create an inception resnet (in eval mode):
+        resnet = InceptionResnetV1(pretrained='vggface2', classify=True).eval()
+        resnet.logits = nn.Linear(512, 100)
+        self.model = resnet
+
+    def forward(self, x):
+        return x, self.model(x)
+
 class FaceModel(nn.Module):
     def __init__(self, image_shape, n_classes, ae, *args, **kwargs):
         super().__init__(*args, **kwargs)
