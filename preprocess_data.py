@@ -51,14 +51,13 @@ def save_face(new_labels, image, label, fname, j, save_loc):
 
 
 if __name__ == "__main__":
-    datasetname = 'train_small'
     parser = argparse.ArgumentParser()
-    parser = add_default_args(parser, 'face_detect', 4, datasetname=datasetname)
+    parser = add_default_args(parser, 'face_detect', 4, datasetname='train_small')
     args = parse_args(parser)
 
     skip_multiple_faces = False
     save_no_face = True
-    if 'train' in datasetname:
+    if 'train' in args.dataset_path:
         skip_multiple_faces = True
         save_no_face = False
 
@@ -96,7 +95,7 @@ if __name__ == "__main__":
             if faces is None:
                 face_count_hist[0] += 1
                 if save_no_face:
-                    new_labels = save_face(new_labels, _image.to(torch.uint8).numpy(), label, filename, 0, save_loc)
+                    new_labels = save_face(new_labels, _image.to(torch.uint8).cpu().numpy(), label, filename, 0, save_loc)
                 continue
             faces = faces[probs > 0.99]
             probs = probs[probs > 0.99]
@@ -105,7 +104,7 @@ if __name__ == "__main__":
             if faces is None:
                 face_count_hist[0] += 1
                 if save_no_face:
-                    new_labels = save_face(new_labels, _image.to(torch.uint8).numpy(), label, filename, 0, save_loc)
+                    new_labels = save_face(new_labels, _image.to(torch.uint8).cpu().numpy(), label, filename, 0, save_loc)
                 continue
 
             face_count_hist[len(faces)] += 1

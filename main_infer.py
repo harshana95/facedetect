@@ -17,17 +17,19 @@ from utils.default_args import add_default_args, parse_args
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser = add_default_args(parser, 'face_detect', 64, phase='infer', datasetname='test_faces')
+    parser.add_argument('--use_best_face', action='store_true', help='Finetune')
     args = parse_args(parser)
 
     trainer = Trainer(args)
     trainer.initialize_model()
+    trainer.model = trainer.model.cuda()
 
     labels = pd.read_csv(join(dirname(args.dataset_path), 'category.csv'))
     n_classes = len(labels)
 
     y = pd.read_csv(args.dataset_path + '.csv')
     y['Path'] = [join(args.dataset_path, i) for i in y['File Name']]
-    y['Label'] = [0 for i in y.Category]
+    y['Label'] = [0 for i in y["Path"]]
     y["Id"] = [i.split("_")[0] for i in y["File Name"]]
     y["Id"] = y["Id"].astype(int)
     y = y.sort_values(by=['Id'])
@@ -41,17 +43,21 @@ if __name__ == '__main__':
     with torch.no_grad():
         for _id in tqdm(unique_id):
             idx = y["Id"] == _id
-            face_ds = ImageDataset(y['Path'][idx], y['Label'][idx], n_classes, transform=transform, onehot=False)
+            _labels = y['Label'][idx]  # dummy labels
+            _f_paths = sorted(y['Path'][idx])  # file paths
+            if args.use_best_face:
+                _f_paths = _f_paths[:1]
+            face_ds = ImageDataset(_f_paths, _labels, n_classes, transform=transform, onehot=False)
             n_faces = len(face_ds)
 
             best_score = -1e10
             best_label = -1
             for sample in face_ds:
                 x = sample[trainer.x_key]
-                x = torch.tensor(x[None])
+                x = torch.tensor(x[None]).cuda()
 
                 x_hat, label = trainer.model(x)
-                label = label.numpy()[0]
+                label = label.cpu().numpy()[0]
 
                 score = label.max()
                 arg_label = label.argmax()
