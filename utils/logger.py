@@ -15,7 +15,7 @@ class Logger():
         if save_dir is None:
             now = datetime.now() if 'time' not in vars(args) else args.time
             now = now.strftime("%Y-%m-%d %H.%M.%S")
-            file_path = join(args.save_dir, f"{now} {args.name}({get_basename(self.args.dataset_path)})", 'log.txt')
+            file_path = join(args.save_dir, f"{now} {args.name} {args.model} ({get_basename(self.args.dataset_path)})", 'log.txt')
             self.save_dir = dirname(file_path)
         else:
             self.save_dir = save_dir
